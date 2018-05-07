@@ -152,13 +152,13 @@ module.exports = (...args) => {
 ``` js
 module.exports = class Creator {
   constructor (name, context, promptModules) {
-    this.name = name
-    this.context = process.env.VUE_CLI_CONTEXT = context
+    this.name = name // 项目名称
+    this.context = process.env.VUE_CLI_CONTEXT = context // 目标目录
     const { presetPrompt, featurePrompt } = this.resolveIntroPrompts() // <==== ⚠️
     this.presetPrompt = presetPrompt
     this.featurePrompt = featurePrompt
     this.outroPrompts = this.resolveOutroPrompts() // <=== ⚠️
-    this.injectedPrompts = []
+    this.injectedPrompts = [] // 
     this.promptCompleteCbs = []
     this.createCompleteCbs = []
 
@@ -191,19 +191,42 @@ module.exports = class Creator {
 
 `PromptModuleAPI` 提供接口 用来 改变 
 
-> Creator
-
 - **this.featurePrompt.choices** `push` 
 
 > 特性选项
 
+```
+? Check the features needed for your project: (Press <space> to select, <a> to toggle all, <i> to invert s
+election)
+❯◯ TypeScript
+ ◯ Progressive Web App (PWA) Support
+ ◯ Router
+ ◯ Vuex
+ ◯ CSS Pre-processors
+ ◯ Linter / Formatter
+ ◯ Unit Testing
+ ◯ E2E Testing
+```
+
 - **this.injectedPrompts** `push/find`
 
-> 相关特性配置-选项
+> 各个「vuex|ts|...」相关特性配置-选项
 
-- **this.promptCompleteCbs**`push`
+> 比如 `CSS Pre-processors`
+
+```
+? Pick a CSS pre-processor (PostCSS, Autoprefixer and CSS Modules are supported by default): (Use arrow ke
+ys)
+❯ SCSS/SASS
+  LESS
+  Stylus
+```
+
+- **this.promptCompleteCbs** `push`
 
 > 选项完成后✅-运行函数
+
+一般是选择性添加到 `pcakage.json` 中的 安装列表
 
 ---
 
@@ -212,3 +235,192 @@ module.exports = class Creator {
 ---
 
 ### 3. Creator create
+
+> 只说-主线路
+
+现在我们开始, `preset` 几种选择 { 用户|默认-preset|内置|什么都不选}的可用性
+
+``` js
+  async create (cliOptions = {}) {
+    const isTestOrDebug = process.env.VUE_CLI_TEST || process.env.VUE_CLI_DEBUG
+    const { run, name, context, createCompleteCbs } = this
+
+    let preset
+    if (cliOptions.preset) {
+      // vue create foo --preset bar
+      // 用户
+      preset = await this.resolvePreset(cliOptions.preset, cliOptions.clone)
+    } else if (cliOptions.default) {
+      // vue create foo --default
+      // 默认-preset
+      preset = defaults.presets.default
+    } else if (cliOptions.inlinePreset) {
+      // vue create foo --inlinePreset {...}
+      // 内置
+      try {
+        preset = JSON.parse(cliOptions.inlinePreset)
+      } catch (e) {
+        error(`CLI inline preset is not valid JSON: ${cliOptions.inlinePreset}`)
+        process.exit(1)
+      }
+    } else {
+      // 什么都不选
+      // 也就是进入, 命令行提供-项目组成-选择
+      preset = await this.promptAndResolvePreset()
+    }
+```
+
+``` js
+    // clone before mutating
+    preset = cloneDeep(preset)
+    // 注入 core service
+    preset.plugins['@vue/cli-service'] = Object.assign({
+      projectName: name
+    }, preset)
+
+    const packageManager = ( // 用什么下载？？
+      cliOptions.packageManager ||
+      loadOptions().packageManager ||
+      (hasYarn() ? 'yarn' : 'npm')
+    )
+```
+
+信息输出
+
+``` js
+    await clearConsole()
+    logWithSpinner(`✨`, `Creating project in ${chalk.yellow(context)}.`)
+
+```
+
+`package.json`构建
+
+``` js
+    // get latest CLI version
+    const { latest } = await getVersions()
+    // generate package.json with plugin dependencies
+    const pkg = {
+      name,
+      version: '0.1.0',
+      private: true,
+      devDependencies: {}
+    }
+    const deps = Object.keys(preset.plugins)
+    deps.forEach(dep => {
+      pkg.devDependencies[dep] = preset.plugins[dep].version ||
+        (/^@vue/.test(dep) ? `^${latest}` : `latest`)
+    }) // 组合
+    // write package.json
+    await writeFileTree(context, {
+      'package.json': JSON.stringify(pkg, null, 2)
+    })
+```
+
+初始化git
+
+``` js
+    // intilaize git repository before installing deps
+    // so that vue-cli-service can setup git hooks.
+    const shouldInitGit = await this.shouldInitGit(cliOptions)
+    if (shouldInitGit) {
+      logWithSpinner(`🗃`, `Initializing git repository...`)
+      await run('git init')
+    }
+```
+
+下载 命令插件
+
+``` js
+    // install plugins
+    stopSpinner()
+    log(`⚙  Installing CLI plugins. This might take a while...`)
+    log()
+    if (isTestOrDebug) {
+      // in development, avoid installation process
+      await setupDevProject(context) // 如果测试或者调试, 阻止下载
+    } else {
+      await installDeps(context, packageManager, cliOptions.registry)
+    }
+```
+
+生成对应插件文件
+
+``` js
+    // run generator
+    log()
+    log(`🚀  Invoking generators...`)
+    const plugins = this.resolvePlugins(preset.plugins)
+    const generator = new Generator(context, {
+      pkg, // 传入 package
+      plugins,
+      completeCbs: createCompleteCbs
+    })
+    await generator.generate({
+      extractConfigFiles: preset.useConfigFiles
+    })
+```
+
+最终下载开发库
+
+``` js
+    // install additional deps (injected by generators)
+    log(`📦  Installing additional dependencies...`)
+    log()
+    if (!isTestOrDebug) {
+      // 为什么 不需要其他传值
+      // 目标目录, yarn/npm, 下载网址
+    // 因为所有的信息都放在了 package.json
+    // $ yarn 就自己下载了
+      await installDeps(context, packageManager, cliOptions.registry)
+    }
+```
+
+完成下载后, 对应添加 `package.json` 安装列表
+
+``` js
+    // run complete cbs if any (injected by generators)
+    log()
+    logWithSpinner('⚓', `Running completion hooks...`)
+    for (const cb of createCompleteCbs) {
+      await cb()
+    }
+
+```
+
+第一个提交
+
+``` js
+    // commit initial state
+    if (shouldInitGit) {
+      await run('git add -A')
+      if (isTestOrDebug) {
+        await run('git', ['config', 'user.name', 'test'])
+        await run('git', ['config', 'user.email', 'test@test.com'])
+      }
+      const msg = typeof cliOptions.git === 'string' ? cliOptions.git : 'init'
+      await run('git', ['commit', '-m', msg])
+    }
+```
+
+完成显示
+
+``` js
+    // log instructions
+    stopSpinner()
+    log()
+    log(`🎉  Successfully created project ${chalk.yellow(name)}.`)
+    log(
+      `👉  Get started with the following commands:\n\n` +
+      (this.context === process.cwd() ? `` : chalk.cyan(` ${chalk.gray('$')} cd ${name}\n`)) +
+      chalk.cyan(` ${chalk.gray('$')} ${packageManager === 'yarn' ? 'yarn serve' : 'npm run serve'}`)
+    )
+    log()
+
+```
+
+统一下, 错误输出
+
+``` js
+generator.printExitLogs()
+```
+
