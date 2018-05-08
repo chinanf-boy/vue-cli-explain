@@ -106,7 +106,7 @@ program
 
 > 命令缩影
 
-- [ X ] __vue create__ ` [options] <app-name> 创建一个由vue-cli-service支持的新项目`
+- [X] __vue create__ ` [options] <app-name> 创建一个由vue-cli-service支持的新项目`
 - [ ] __vue add__ ` <plugin> [pluginOptions] 安装插件并在已创建的项目中调用其生成器`
 - [ ] __vue invoke__ ` <plugin> [pluginOptions] 在已创建的项目中调用插件的生成器`
 - [ ] __vue inspect__ ` [options] [paths...] 使用vue-cli-service检查项目中的webpack配置`
