@@ -57,7 +57,7 @@ async function create (projectName, options) {
 
 - [inquirer](https://github.com/SBoudrias/Inquirer.js#examples)
 
-> 终端选择
+> 终端-选项选择
 
 - [rimraf](https://github.com/isaacs/rimraf)
 
