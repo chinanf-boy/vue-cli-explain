@@ -6,6 +6,83 @@
 
 比如 `vue invoke buefy`
 
+---
+
+说一说思路先, 在[上一步](./add.md)下载完 `插件`后
+
+我们来到了调用的环节, 此处需要插件作者配合编写
+
+1. 我本身要有一个存储
+
+比如 [Generator](./generator.md) 先作为一个存储-存在
+
+既然是存储, 自然有一系列的 
+
+``` js
+function Generator(options){
+  this.pkg = options.pkg // package.json
+  this.context = options.pwd // process.cwd()
+  // ....等等
+}
+```
+
+> `Generator == 存储`
+
+2. 拿到插件作者的插件定义
+
+我们有了, 存储的位置, 我们开始把插件作者定义的内容放进去
+
+- [插件/generator](#plugingenerator)
+
+> 一个是 代码本身的内容 `code`
+
+- [插件/prompts](#pluginprompts)
+
+> 一个是 代码需要的选项配置 `config`
+
+3. 给予插件作者权力
+
+我们有`Generator`, 也有了插件作者输入的内容, 但这些内容, 可以说一点用都没用
+
+因为我们没有放出我们`Generator-接口`,那么插件作者的代码充其量只是漫长的 `string` 而已
+
+那么什么为`接口`
+
+比如我们要改变 `Generator` 中的 `this.pkg`, 我们需要 
+
+``` js
+let generator = new Generator(options) // 实例化存储
+
+// 将实例的 generator 参数带入
+function API(generator){   // ==> 一个接口总部原型
+  this.generator = generator
+}
+
+API.prototype.setPkg = function(obj){ // 给插件作者的接口
+  this.generator.pkg = obj // 
+}
+
+let useAPI = new API(generator) // 实例化接口总部
+
+```
+
+那么插件作者方面, 被给予的权力
+
+``` js
+// 插件/generator 代码
+// api 就是被实例化 具有改变 generator 的 接口总部
+module.exports = (api, options) =>{
+  api.setPkg(//....)
+}
+
+```
+
+[vue-cli-接口使用 buefy插件](./plugin-buefy.md)
+
+[vue-cli-接口定义 GeneratorAPI](./generator.md#constructor)
+
+---
+
 ## invoke.js
 
 `vue-cli/packages/@vue/cli/lib/invoke.js`
@@ -134,6 +211,8 @@ __1.2__ 个性化, 插件-选项选择
 
 ```
 
+- [prompts](./plugin-buefy.md#prompts)
+
 ### generator
 
 __1.3__ 生成器运行
@@ -150,7 +229,7 @@ __1.3__ 生成器运行
     pkg,
     plugins: [plugin],
     files: await readFiles(context),
-    completeCbs: createCompleteCbs
+    completeCbs: createCompleteCbs // 地址传输
   })
 
   log()
@@ -168,6 +247,10 @@ __1.3__ 生成器运行
 
 - [readFiles](#readfiles)
 
+
+
+---
+
 ### installDeps
 
 __1.4__ 查看运行生成器后, 相关下载依赖是否发生变化
@@ -183,10 +266,15 @@ __1.4__ 查看运行生成器后, 相关下载依赖是否发生变化
     logWithSpinner('📦', `Installing additional dependencies...`)
     const packageManager =
       loadOptions().packageManager || (hasYarn() ? 'yarn' : 'npm')
-    await installDeps(context, packageManager)
+    await installDeps(context, packageManager) // 直接 命令输入 yarn/npm 就可以下载
   }
 
-// 经过 生成器运行, 因为是地址传输, 可以改变 createCompleteCbs数组
+```
+
+### createCompleteCbs
+
+``` js
+// 经过 生成器运行, 因为是 地址传输, 可以改变 createCompleteCbs数组
 // 触发 完成后函数
 
   if (createCompleteCbs.length) {
@@ -196,7 +284,7 @@ __1.4__ 查看运行生成器后, 相关下载依赖是否发生变化
     }
   }
 
-  stopSpinner()
+  stopSpinner() // 停止转圈圈
 
 ```
 
@@ -246,6 +334,31 @@ __1.6__ `generator` 最后信息输出
   generator.printExitLogs()
 }
 
+```
+
+#### printExitLogs
+
+`vue-cli/packages/@vue/cli/lib/Generator.js`
+
+错误统计
+
+``` js
+// 这个 错误信息 统计的 好像没有在哪看到使用
+// 应该是待续功能
+  printExitLogs () {
+    if (this.exitLogs.length) {
+      this.exitLogs.forEach(({ id, msg, type }) => {
+        const shortId = toShortPluginId(id)
+        const logFn = logTypes[type]
+        if (!logFn) {
+          logger.error(`Invalid api.exitLog type '${type}'.`, shortId)
+        } else {
+          logFn(msg, msg && shortId)
+        }
+      })
+      logger.log()
+    }
+  }
 ```
 
 ### exports

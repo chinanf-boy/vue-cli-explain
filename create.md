@@ -55,6 +55,8 @@ async function create (projectName, options) {
 
 ```
 
+<details>
+
 - [inquirer](https://github.com/SBoudrias/Inquirer.js#examples)
 
 > 终端-选项选择
@@ -66,6 +68,9 @@ async function create (projectName, options) {
 - [validateProjectName](https://github.com/npm/validate-npm-package-name)
 
 > 给定的字符串是一个可接受的npm包名称？
+
+</details>
+
 
 ``` js
   if (fs.existsSync(targetDir)) { // 同步验证存在目录
@@ -142,12 +147,10 @@ module.exports = (...args) => {
 
 ```
 
+### Creator constructor
 
-- [Creator]()
+2. 初始化
 
-- [creator.create]()
-
-### 2. Creator constructor
 
 ``` js
 module.exports = class Creator {
@@ -182,8 +185,6 @@ module.exports = class Creator {
 
 # 当然在这里还没有开始运行
 ```
-
-
 
 ---
 
@@ -234,8 +235,9 @@ ys)
 
 ---
 
-### 3. Creator create
+### Creator create
 
+__3. 开始创建__ 
 > 只说-主线路
 
 现在我们开始, `preset` 几种选择 { 用户|默认-preset|内置|什么都不选}的可用性
@@ -285,7 +287,7 @@ ys)
     )
 ```
 
-信息输出
+__3.1__ 信息输出
 
 ``` js
     await clearConsole()
@@ -293,7 +295,7 @@ ys)
 
 ```
 
-`package.json`构建
+__3.2__ `package.json`构建
 
 ``` js
     // get latest CLI version
@@ -316,7 +318,7 @@ ys)
     })
 ```
 
-初始化git
+__3.3__  初始化git
 
 ``` js
     // intilaize git repository before installing deps
@@ -328,7 +330,7 @@ ys)
     }
 ```
 
-下载 命令插件
+__3.4__ 下载 命令插件
 
 ``` js
     // install plugins
@@ -343,7 +345,7 @@ ys)
     }
 ```
 
-生成对应插件文件
+__3.5__ 生成对应插件文件
 
 ``` js
     // run generator
@@ -360,7 +362,9 @@ ys)
     })
 ```
 
-最终下载开发库
+- [Generator](./generator.md)
+
+__3.6__ 下载最终开发库
 
 ``` js
     // install additional deps (injected by generators)
@@ -375,7 +379,7 @@ ys)
     }
 ```
 
-完成下载后, 对应添加 `package.json` 安装列表
+__3.7__ 完成下载后, 对应添加 `package.json` 安装列表
 
 ``` js
     // run complete cbs if any (injected by generators)
@@ -387,7 +391,7 @@ ys)
 
 ```
 
-第一个提交
+__3.8__ 第一个提交
 
 ``` js
     // commit initial state
@@ -402,7 +406,7 @@ ys)
     }
 ```
 
-完成显示
+__3.9__ 完成显示
 
 ``` js
     // log instructions
@@ -418,7 +422,7 @@ ys)
 
 ```
 
-统一下, 错误输出
+__3.10__ 统一下, 错误输出
 
 ``` js
 generator.printExitLogs()

@@ -64,4 +64,4 @@ module.exports = (...args) => {
 
 #### [invoke](./invoke.md)
 
-> 模版触发
+> 模版触发生成
