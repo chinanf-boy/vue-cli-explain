@@ -1,11 +1,15 @@
 
-## app
+## add
 
 `vue add [pluginName]`
 
 安装插件 并在已经创建的项目中调用其生成器
 
 > 不如 `vue add buefy`
+
+### add.js
+
+`vue-cli/packages/@vue/cli/lib/add.js`
 
 ``` js
 const chalk = require('chalk')
