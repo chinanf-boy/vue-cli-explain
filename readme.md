@@ -115,7 +115,7 @@ program
 - [x] __vue invoke__ ` <plugin> [pluginOptions] 在已创建的项目中调用插件的生成器`   ⬆️
 - [x] __vue inspect__ ` [options] [paths...] 使用vue-cli-service检查项目中的webpack配置`
 - [x] __vue serve__ ` [options] [entry] 在零配置下以开发模式提供.js或.vue文件`
-- [ ] __vue build__ ` [options] [entry] 在生产模式下使用零配置构建.js或.vue文件`
+- [x] __vue build__ ` [options] [entry] 在生产模式下使用零配置构建.js或.vue文件`
 - [ ] __vue init__ ` <template> <app-name> 从远程模板（传统API，需要@vue）生成项目`
 
 ---
