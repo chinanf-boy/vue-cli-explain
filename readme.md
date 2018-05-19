@@ -65,7 +65,9 @@ if (!semver.satisfies(process.version, requiredVersion)) {
 }
 ```
 
-- 1.1 semver
+- 1.1 [semver](https://github.com/npm/node-semver)
+
+npm的语义版本
 
 ---
 
@@ -85,7 +87,9 @@ if (
 }
 ```
 
-- 2.1 slash
+- 2.1 [slash](https://github.com/sindresorhus/slash)
+
+统一 `window` 和 `unix` 斜号
 
 ---
 
@@ -110,7 +114,7 @@ program
 - [x] __vue add__ ` <plugin> [pluginOptions] 安装插件并在已创建的项目中调用其生成器` ⬇️
 - [x] __vue invoke__ ` <plugin> [pluginOptions] 在已创建的项目中调用插件的生成器`   ⬆️
 - [x] __vue inspect__ ` [options] [paths...] 使用vue-cli-service检查项目中的webpack配置`
-- [ ] __vue serve__ ` [options] [entry] 在零配置下以开发模式提供.js或.vue文件`
+- [x] __vue serve__ ` [options] [entry] 在零配置下以开发模式提供.js或.vue文件`
 - [ ] __vue build__ ` [options] [entry] 在生产模式下使用零配置构建.js或.vue文件`
 - [ ] __vue init__ ` <template> <app-name> 从远程模板（传统API，需要@vue）生成项目`
 
@@ -164,7 +168,9 @@ program
   })
 ```
 
-- minimist
+- [minimist](https://github.com/substack/minimist)
+
+解析参数选项
 
 
 </details>
@@ -217,6 +223,9 @@ program
   })
 ```
 
+- [cleanArgs](#cleanargs)
+
+清理没有命令
 
 </details>
 
@@ -239,6 +248,9 @@ program
     loadCommand('serve', '@vue/cli-service-global').serve(entry, cleanArgs(cmd))
   })
 ```
+
+- [loadCommand](#loadcommand)
+
 
 
 </details>
@@ -380,14 +392,21 @@ if (!process.argv.slice(2).length) {
   program.outputHelp()
 }
 
-// commander passes the Command object itself as options,
-// extract only actual options into a fresh object.
+```
+
+</details>
+
+#### cleanArgs
+
+``` js
+//命令将Command对象本身作为选项传递，
+//仅将实际选项提取到新对象中。
 function cleanArgs (cmd) {
   const args = {}
   cmd.options.forEach(o => {
     const key = o.long.replace(/^--/, '')
-    // if an option is not present and Command has a method with the same name
-    // it should not be copied
+    //如果一个选项不存在并且Command有一个同名的方法
+     //它不应该被复制
     if (typeof cmd[key] !== 'function') {
       args[key] = cmd[key]
     }
@@ -398,5 +417,45 @@ function cleanArgs (cmd) {
 ```
 
 
-</details>
+#### loadCommand
 
+`vue-cli/packages/@vue/cli/lib/util/loadCommand.js`
+
+主要就是请求
+
+``` js
+// 
+module.exports = function loadCommand (commandName, moduleName) {
+  const isNotFoundError = err => {
+    return err.message.match(/Cannot find module/)
+  }
+  try {
+    return require(moduleName) // 直接请求
+  } catch (err) {
+    if (isNotFoundError(err)) {
+      try {
+        return require('import-global')(moduleName) // 全局请求
+      } catch (err2) {
+        if (isNotFoundError(err2)) {
+          const chalk = require('chalk')
+          const { hasYarn } = require('@vue/cli-shared-utils')
+          const installCommand = hasYarn() ? `yarn global add` : `npm install -g`
+          console.log()
+          console.log(
+            // 叫用户自己 全局下载下载
+            `  Command ${chalk.cyan(`vue ${commandName}`)} requires a global addon to be installed.\n` +
+            `  Please run ${chalk.cyan(`${installCommand} ${moduleName}`)} and try again.` 
+          )
+          console.log()
+          process.exit(1)
+        } else {
+          throw err2
+        }
+      }
+    } else {
+      throw err
+    }
+  }
+}
+
+```
