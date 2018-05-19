@@ -109,7 +109,7 @@ program
 - [X] __vue create__ ` [options] <app-name> 创建一个由vue-cli-service支持的新项目`
 - [x] __vue add__ ` <plugin> [pluginOptions] 安装插件并在已创建的项目中调用其生成器` ⬇️
 - [x] __vue invoke__ ` <plugin> [pluginOptions] 在已创建的项目中调用插件的生成器`   ⬆️
-- [ ] __vue inspect__ ` [options] [paths...] 使用vue-cli-service检查项目中的webpack配置`
+- [x] __vue inspect__ ` [options] [paths...] 使用vue-cli-service检查项目中的webpack配置`
 - [ ] __vue serve__ ` [options] [entry] 在零配置下以开发模式提供.js或.vue文件`
 - [ ] __vue build__ ` [options] [entry] 在生产模式下使用零配置构建.js或.vue文件`
 - [ ] __vue init__ ` <template> <app-name> 从远程模板（传统API，需要@vue）生成项目`
@@ -206,6 +206,10 @@ program
 program
   .command('inspect [paths...]')
   .option('--mode <mode>')
+  .option('--rule <ruleName>', 'inspect a specific module rule')
+  .option('--plugin <pluginName>', 'inspect a specific plugin')
+  .option('--rules', 'list all module rule names')
+  .option('--plugins', 'list all plugin names')
   .option('-v --verbose', 'Show full function definitions in output')
   .description('inspect the webpack config in a project with vue-cli-service')
   .action((paths, cmd) => {
